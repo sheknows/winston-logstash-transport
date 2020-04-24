@@ -30,11 +30,13 @@ class LogstashTransport extends Transport {
       trailingLineFeed: false,
       trailingLineFeedChar: os.EOL,
       level: 'info',
-      formatted: true
+      formatted: true,
+      customFields: {}
     };
 
     options = options || {};
     options.applicationName = options.applicationName || options.appName || process.title;
+    options.customFields = options.customFields || {}
     options = __.merge(defaults, options);
     super(options);
 
@@ -64,9 +66,8 @@ class LogstashTransport extends Transport {
   tryStringify(data) {
     let msg;
     // when options.formatted is false this will always be skipped
-    if (typeof data !== 'object') {
-      const strData = data;
-      data = { data: strData };
+    if (typeof data === 'string') {
+      return data
     }
     try {
       msg = JSON.stringify(data);
@@ -88,7 +89,7 @@ class LogstashTransport extends Transport {
         output = this.tryStringify(info);
       } else {
         const msg = this.tryStringify(info.message);
-        output = JSON.stringify({
+        const a = {
           timestamp: new Date().toISOString(),
           message: msg,
           level: info.level,
@@ -96,7 +97,8 @@ class LogstashTransport extends Transport {
           application: this.applicationName,
           serverName: this.localhost,
           pid: this.pid
-        });
+        }
+        output = JSON.stringify({...this.customFields, ...a})
       }
 
       if (this.connectionState !== 'CONNECTED') {
