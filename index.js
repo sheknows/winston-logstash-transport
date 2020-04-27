@@ -89,7 +89,7 @@ class LogstashTransport extends Transport {
         output = this.tryStringify(info);
       } else {
         const msg = this.tryStringify(info.message);
-        const a = {
+        const fields = {
           timestamp: new Date().toISOString(),
           message: msg,
           level: info.level,
@@ -98,7 +98,10 @@ class LogstashTransport extends Transport {
           serverName: this.localhost,
           pid: this.pid
         }
-        output = JSON.stringify({...this.customFields, ...a})
+        if (info.stack) {
+          fields.stack = info.stack
+        }
+        output = JSON.stringify({...this.customFields, ...fields})
       }
 
       if (this.connectionState !== 'CONNECTED') {
